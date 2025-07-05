@@ -29,6 +29,7 @@ jobs:
         run: |
           echo "SHEET_ID=${{ secrets.SHEET_ID }}" >> .env
           echo "SHEET_NAME=${{ secrets.SHEET_NAME }}" >> .env
+          echo "SHEET_NAME2=${{ secrets.SHEET_NAME2 }}" >> .env
           echo "GOOGLE_SERVICE_ACCOUNT_EMAIL=${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}" >> .env
           echo "GOOGLE_PRIVATE_KEY=\"${{ secrets.GOOGLE_PRIVATE_KEY }}\"" >> .env
           echo "BATCH_INDEX=${{ matrix.batch_index }}" >> .env
@@ -40,3 +41,6 @@ jobs:
 
       - name: Run Script
         run: node index.js
+
+      - name: Run Script 2
+        run: node index2.js
