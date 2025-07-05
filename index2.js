@@ -71,68 +71,54 @@ async function updateSheet(results) {
   }
 }
 
-async function processLinks(links) {
-  const browser = await puppeteer.launch({
-    headless: "new", // Login page requires UI rendering
-    slowMo: 50,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
-  const page = await browser.newPage();
-  const hasCookies = await loadCookies(page);
-  if (!hasCookies) {
-    try {
-      const cookies = await login(page);
-      await saveCookies(cookies);
-    } catch (err) {
-      console.error("❌ Login failed:", err.message);
-      //   try {
-      //     await page.screenshot({ path: "fatal-login-error.png" });
-      //   } catch (screenshotError) {
-      //     console.warn("⚠ Could not take screenshot:", screenshotError.message);
-      //   }
+async function processLinks(allLinks) {
+  const BATCH_SIZE = 50; // new browser every 50
+  for (let i = 0; i < allLinks.length; i += BATCH_SIZE) {
+    const linksChunk = allLinks.slice(i, i + BATCH_SIZE);
 
-      await browser.close();
-      process.exit(1);
-    }
-  }
+    const browser = await puppeteer.launch({
+      headless: "new",
+      slowMo: 50,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
 
-  let updates = [];
-
-  for (const { rowIndex, link } of links) {
-    let retries = 0;
-    let result;
-    while (retries < 2) {
+    const page = await browser.newPage();
+    const hasCookies = await loadCookies(page);
+    if (!hasCookies) {
       try {
-        result = await scrapeChart(page, link);
-        updates.push({ rowIndex, ...result });
-        console.log(`✅ Row ${rowIndex}: ${result.status}`);
-        break;
+        const cookies = await login(page);
+        await saveCookies(cookies);
       } catch (err) {
-        retries++;
-        console.error(
-          `❌ Row ${rowIndex} failed (attempt ${retries}):`,
-          err.message
-        );
-        // if (retries === 2) {
-        //   results.push({
-        //     rowIndex,
-        //     status: "NO",
-        //     hl2Value: "",
-        //     highValue: "",
-        //     O: "",
-        //     H: "",
-        //     L: "",
-        //     C: "",
-        //   });
-        // }
+        console.error("❌ Login failed:", err.message);
+        await browser.close();
+        continue;
       }
     }
+
+    let updates = [];
+
+    for (const { rowIndex, link } of linksChunk) {
+      let retries = 0;
+      let result;
+      while (retries < 2) {
+        try {
+          result = await scrapeChart(page, link);
+          updates.push({ rowIndex, ...result });
+          console.log(`✅ Row ${rowIndex}: ${result.status}`);
+          break;
+        } catch (err) {
+          retries++;
+          console.error(
+            `❌ Row ${rowIndex} failed (attempt ${retries}):`,
+            err.message
+          );
+        }
+      }
+    }
+
+    await browser.close();
+    await updateSheet(updates); // push data after each chunk
   }
-
-  await browser.close();
-  await updateSheet(updates);
-
-  // return results;
 }
 
 (async () => {
