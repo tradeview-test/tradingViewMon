@@ -49,14 +49,13 @@ async function getLinks() {
     .filter((entry) => !!entry.link);
 }
 
-async function updateSheet(result) {
-  const { rowIndex, status, hl2Value, highValue, O, H, L, C } = result;
-  const data = [
-    {
+async function updateSheet(results) {
+  const data = results.map(
+    ({ rowIndex, status, hl2Value, highValue, O, H, L, C }) => ({
       range: `${SHEET_NAME}!C${rowIndex}:I${rowIndex}`,
       values: [[status, hl2Value, highValue, O, H, L, C]],
-    },
-  ];
+    })
+  );
 
   try {
     const res = await sheets.spreadsheets.values.batchUpdate({
@@ -97,13 +96,15 @@ async function processLinks(links) {
     }
   }
 
+  let updates = [];
+
   for (const { rowIndex, link } of links) {
     let retries = 0;
     let result;
     while (retries < 2) {
       try {
         result = await scrapeChart(page, link);
-        await updateSheet({ rowIndex, ...result });
+        updates.push({ rowIndex, ...result });
         console.log(`✅ Row ${rowIndex}: ${result.status}`);
         break;
       } catch (err) {
@@ -129,6 +130,8 @@ async function processLinks(links) {
   }
 
   await browser.close();
+  await updateSheet(updates);
+
   // return results;
 }
 
