@@ -1,0 +1,38 @@
+name: Run TradingView
+
+on:
+  schedule:
+    - cron: "30 7 * * *"
+    - cron: "30 10 * * *"
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: create .env file
+        run: |
+          echo "SHEET_ID=${{ secrets.SHEET_ID }}" >> .env
+          echo "SHEET_NAME=${{ secrets.SHEET_NAME }}" >> .env
+
+          echo "GOOGLE_SERVICE_ACCOUNT_EMAIL=${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}" >> .env
+          echo "GOOGLE_PRIVATE_KEY=\"${{ secrets.GOOGLE_PRIVATE_KEY }}\"" >> .env
+
+      - name: Restore cookies.json from base64
+        run: echo "${{ secrets.COOKIES_BASE64 }}" | base64 -d > cookies.json
+        shell: bash
+
+      - name: Run Script
+        run: node index.js

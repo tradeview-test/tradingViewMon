@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "dotenv": "^17.0.0",
+    "googleapis": "^150.0.1",
+    "puppeteer": "^24.11.2"
+  },
+  "type": "module"
+}
