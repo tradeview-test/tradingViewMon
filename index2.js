@@ -72,7 +72,7 @@ async function updateSheet(results) {
 }
 
 async function processLinks(allLinks) {
-  const BATCH_SIZE = 50; // new browser every 50
+  const BATCH_SIZE = 30; // new browser every 50
   for (let i = 0; i < allLinks.length; i += BATCH_SIZE) {
     const linksChunk = allLinks.slice(i, i + BATCH_SIZE);
 
