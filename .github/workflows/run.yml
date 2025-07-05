@@ -1,4 +1,4 @@
-name: Run TradingView
+name: Run TradingView in Batches
 
 on:
   schedule:
@@ -9,6 +9,9 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        batch_index: [0, 1, 2, 3, 4, 5, 6, 7]
 
     steps:
       - name: Checkout Code
@@ -22,13 +25,14 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: create .env file
+      - name: Create .env file
         run: |
           echo "SHEET_ID=${{ secrets.SHEET_ID }}" >> .env
           echo "SHEET_NAME=${{ secrets.SHEET_NAME }}" >> .env
-
           echo "GOOGLE_SERVICE_ACCOUNT_EMAIL=${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}" >> .env
           echo "GOOGLE_PRIVATE_KEY=\"${{ secrets.GOOGLE_PRIVATE_KEY }}\"" >> .env
+          echo "BATCH_INDEX=${{ matrix.batch_index }}" >> .env
+          echo "BATCH_SIZE=95" >> .env
 
       - name: Restore cookies.json from base64
         run: echo "${{ secrets.COOKIES_BASE64 }}" | base64 -d > cookies.json
