@@ -41,6 +41,3 @@ jobs:
 
       - name: Run Script
         run: node index.js
-
-      - name: Run Script 2
-        run: node index2.js
