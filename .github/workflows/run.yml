@@ -3,7 +3,6 @@ name: Run TradingView in Batches
 on:
   schedule:
     - cron: "30 7 * * *"
-    - cron: "30 10 * * *"
   workflow_dispatch:
 
 jobs:
