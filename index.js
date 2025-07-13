@@ -11,7 +11,7 @@ if (process.env.COOKIES_BASE64 && !fs.existsSync(COOKIE_PATH)) {
     "utf-8"
   );
   fs.writeFileSync(COOKIE_PATH, decoded);
-  console.log("✅ cookies.json restored from Base64");
+  console.log("cookies.json restored from Base64");
 }
 
 async function saveCookies(cookies) {
@@ -46,7 +46,7 @@ async function getLinks() {
   const rows = res.data.values || [];
   return rows
     .map((row, i) => ({ rowIndex: i + 2, link: row[0] }))
-    .filter((entry) => !!entry.link);
+    .filter((e) => e.link && inMyBatch(e.rowIndex));
 }
 
 async function updateSheet(results) {
@@ -70,9 +70,17 @@ async function updateSheet(results) {
     console.error("❌ Failed to update sheet:", err.message);
   }
 }
+// ───── batch‑slice helpers ─────
+const ROWS_PER_BATCH = +process.env.ROWS_PER_BATCH || 151; // default 250
+const BATCH_INDEX = +process.env.BATCH_INDEX || 0; // default first slice
+function inMyBatch(row) {
+  const start = BATCH_INDEX * ROWS_PER_BATCH + 2; // rows start at 2
+  const end = start + ROWS_PER_BATCH - 1;
+  return row >= start && row <= end;
+}
 
 async function processLinks(allLinks) {
-  const BATCH_SIZE = 30; // new browser every 50
+  const BATCH_SIZE = 20; // new browser every 20
   for (let i = 0; i < allLinks.length; i += BATCH_SIZE) {
     const linksChunk = allLinks.slice(i, i + BATCH_SIZE);
 
@@ -104,12 +112,12 @@ async function processLinks(allLinks) {
         try {
           result = await scrapeChart(page, link);
           updates.push({ rowIndex, ...result });
-          console.log(`✅ Row ${rowIndex}: ${result.status}`);
+          console.log(`Row ${rowIndex}: ${result.status}`);
           break;
         } catch (err) {
           retries++;
           console.error(
-            `❌ Row ${rowIndex} failed (attempt ${retries}):`,
+            `Row ${rowIndex} failed (attempt ${retries}):`,
             err.message
           );
         }
@@ -123,15 +131,5 @@ async function processLinks(allLinks) {
 
 (async () => {
   const links = await getLinks();
-
-  const BATCH_SIZE = parseInt(process.env.BATCH_SIZE || "100");
-  const BATCH_INDEX = parseInt(process.env.BATCH_INDEX || "0");
-
-  const start = BATCH_INDEX * BATCH_SIZE;
-  const end = start + BATCH_SIZE;
-
-  const currentBatch = links.slice(start, end);
-
-  console.log(`🔄 Processing batch ${BATCH_INDEX} (${start} to ${end})`);
-  await processLinks(currentBatch);
+  await processLinks(links);
 })();

@@ -1,8 +1,6 @@
-name: Run TradingView in Batches
+name: Run TradingView Sequentially
 
 on:
-  schedule:
-    - cron: "30 7 * * *"
   workflow_dispatch:
 
 jobs:
@@ -10,7 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        batch_index: [0, 1, 2, 3, 4, 5, 6, 7]
+        batch: [0, 1, 2, 3, 4]
+
+    env:
+      ROWS_PER_BATCH: 151
 
     steps:
       - name: Checkout Code
@@ -31,8 +32,7 @@ jobs:
           echo "SHEET_NAME2=${{ secrets.SHEET_NAME2 }}" >> .env
           echo "GOOGLE_SERVICE_ACCOUNT_EMAIL=${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}" >> .env
           echo "GOOGLE_PRIVATE_KEY=\"${{ secrets.GOOGLE_PRIVATE_KEY }}\"" >> .env
-          echo "BATCH_INDEX=${{ matrix.batch_index }}" >> .env
-          echo "BATCH_SIZE=95" >> .env
+          echo "BATCH_SIZE=999999" >> .env
 
       - name: Restore cookies.json from base64
         run: echo "${{ secrets.COOKIES_BASE64 }}" | base64 -d > cookies.json
@@ -40,3 +40,5 @@ jobs:
 
       - name: Run Script
         run: node index.js
+        env:
+          BATCH_INDEX: ${{ matrix.batch }}
