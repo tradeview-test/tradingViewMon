@@ -63,7 +63,7 @@ async function updateSheet(results) {
       Volume1,
       Volume2,
     }) => ({
-      range: `${SHEET_NAME}!C${rowIndex}:J${rowIndex}`,
+      range: `${SHEET_NAME}!C${rowIndex}:K${rowIndex}`,
       values: [[status, hl2Value, highValue, O, H, L, C, Volume1, Volume2]],
     })
   );
