@@ -32,7 +32,7 @@ export async function scrapeChart(page, url) {
         H: "",
         L: "",
         C: "",
-        Volume: "",
+        Volume1: "",
         Volume2: "",
       };
     }
@@ -43,65 +43,69 @@ export async function scrapeChart(page, url) {
     );
     await new Promise((r) => setTimeout(r, 3000));
 
-    const { trendData, ohlcData, volume, volume2 } = await page.evaluate(() => {
-      const trends = Array.from(
-        document.querySelectorAll('[data-name="legend-source-item"]')
-      );
+    const { trendData, ohlcData, volume1, volume2 } = await page.evaluate(
+      () => {
+        const trends = Array.from(
+          document.querySelectorAll('[data-name="legend-source-item"]')
+        );
 
-      const getSourceType = (trend) => {
-        const el = Array.from(
-          trend.querySelectorAll('[data-name="legend-source-description"]')
-        ).find((e) => e.title === "Source");
-        return el?.querySelector("div")?.textContent.trim() || null;
-      };
-
-      const getColorAndValue = (trend) => {
-        const valueItems = Array.from(
-          trend.querySelectorAll(".valueValue-l31H9iuA")
-        ).filter((el) => el.textContent.trim().match(/[\d,]+\.\d+/)); // filter only numeric looking ones
-
-        const el = valueItems[0]; // pick the first valid number
-
-        return {
-          color: el?.style.color || null,
-          value: el?.textContent.trim() || null,
+        const getSourceType = (trend) => {
+          const el = Array.from(
+            trend.querySelectorAll('[data-name="legend-source-description"]')
+          ).find((e) => e.title === "Source");
+          return el?.querySelector("div")?.textContent.trim() || null;
         };
-      };
 
-      const trendData = trends
-        .map((trend) => {
-          const source = getSourceType(trend);
-          const { color, value } = getColorAndValue(trend);
-          return { source, color, value };
-        })
-        .filter((t) => t.source && t.color && t.value);
+        const getColorAndValue = (trend) => {
+          const valueItems = Array.from(
+            trend.querySelectorAll(".valueValue-l31H9iuA")
+          ).filter((el) => el.textContent.trim().match(/[\d,]+\.\d+/)); // filter only numeric looking ones
 
-      const ohlcData = {};
-      document.querySelectorAll("[data-test-id-value-title]").forEach((el) => {
-        const title = el.getAttribute("data-test-id-value-title");
-        const value = el
-          .querySelector(".valueValue-l31H9iuA")
-          ?.textContent.trim();
-        if (["O", "H", "L", "C"].includes(title)) {
-          ohlcData[title] = value;
-        }
-      });
-      const volume =
+          const el = valueItems[0]; // pick the first valid number
+
+          return {
+            color: el?.style.color || null,
+            value: el?.textContent.trim() || null,
+          };
+        };
+
+        const trendData = trends
+          .map((trend) => {
+            const source = getSourceType(trend);
+            const { color, value } = getColorAndValue(trend);
+            return { source, color, value };
+          })
+          .filter((t) => t.source && t.color && t.value);
+
+        const ohlcData = {};
         document
-          .querySelector(
-            '[data-test-id-value-title="Volume"] .valueValue-l31H9iuA'
-          )
-          ?.textContent.trim() || "";
+          .querySelectorAll("[data-test-id-value-title]")
+          .forEach((el) => {
+            const title = el.getAttribute("data-test-id-value-title");
+            const value = el
+              .querySelector(".valueValue-l31H9iuA")
+              ?.textContent.trim();
+            if (["O", "H", "L", "C"].includes(title)) {
+              ohlcData[title] = value;
+            }
+          });
+        const volume1 =
+          document
+            .querySelector(
+              '[data-test-id-value-title="Volume"] .valueValue-l31H9iuA'
+            )
+            ?.textContent.trim() || "";
 
-      const volume2 =
-        document
-          .querySelector(
-            '[data-test-id-value-title="Volume MA"] .valueValue-l31H9iuA'
-          )
-          ?.textContent.trim() || "";
+        const volume2 =
+          document
+            .querySelector(
+              '[data-test-id-value-title="Volume MA"] .valueValue-l31H9iuA'
+            )
+            ?.textContent.trim() || "";
 
-      return { trendData, ohlcData, volume, volume2 };
-    });
+        return { trendData, ohlcData, volume1, volume2 };
+      }
+    );
 
     const hl2 = trendData.find((t) => t.source === "hl2");
     const high = trendData.find((t) => t.source === "high");
@@ -119,7 +123,7 @@ export async function scrapeChart(page, url) {
         : "N";
 
     console.log(
-      `hl2: ${hl2Color}, high: ${highColor} → ${status}, Volume:${volume}, Volume2:${volume2}`
+      `hl2: ${hl2Color}, high: ${highColor} → ${status}, Volume:${volume1}, Volume2:${volume2}`
     );
 
     return {
@@ -130,7 +134,7 @@ export async function scrapeChart(page, url) {
       H: ohlcData.H || "",
       L: ohlcData.L || "",
       C: ohlcData.C || "",
-      Volume: volume || "",
+      Volume1: volume1 || "",
       Volume2: volume2 || "",
     };
   } catch (err) {
@@ -143,7 +147,7 @@ export async function scrapeChart(page, url) {
       H: "",
       L: "",
       C: "",
-      Volume: "",
+      Volume1: "",
       Volume2: "",
     };
   }
